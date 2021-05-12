@@ -1,0 +1,19 @@
+What we need: 
+- LCD display
+- 2 green LED
+- 1 yellow LED
+- 1 orange LED
+- 1 red LED
+- massive capacitor
+- op amps for voltage translation
+- decoupling capacitors
+- Right Wheel Rotation Encoder
+- Left Wheel Rotation Encoder
+- Battery Enery Level Detector
+- Right Wheel Motor
+- Left Wheel Motor
+- Switch (for locked/run mode)
+- potentiometers 
+	1 for speed
+	1 for steering
+	or one joystick type of thing for both
