@@ -1,12 +1,13 @@
 What we need:
 
 Barry 
-- massive capacitor
-- op amps for voltage translation
-- decoupling capacitors
+//- massive capacitor
+----- op amps for voltage translation
+----- decoupling capacitors
 - LCD display
-- Battery Enery Level Detector
-- Wheel Motor
+//- Battery Enery Level Detector
+//- Wheel Motor
+- motor encoder
 
 Anweshi
 - LEDs
