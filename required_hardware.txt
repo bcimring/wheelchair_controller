@@ -7,7 +7,7 @@ Barry
 - LCD display
 //- Battery Enery Level Detector
 //- Wheel Motor
-- motor encoder
+//- motor encoder
 
 Anweshi
 - LEDs
