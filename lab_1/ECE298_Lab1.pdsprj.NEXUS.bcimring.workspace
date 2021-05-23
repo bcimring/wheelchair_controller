@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <WORKSPACE>
  <FRAME activewindow="0">
-  <PLACEMENT>2c0000000200000003000000ffffffffffffffffffffffffffffffff0e000000160000002b06000006040000</PLACEMENT>
+  <PLACEMENT>2c00000002000000030000000083ffff0083ffffffffffffffffffff0e000000160000002b06000006040000</PLACEMENT>
   <WINDOW type="default" module="ISIS"/>
   <WINDOW type="default" module="ARES"/>
   <WINDOW type="default" module="PROJNOTES"/>
@@ -53,6 +53,33 @@
     <PROPERTIES/>
    </POPUP>
    <POPUP w="1156" x="88" flags="00000020" y="200" h="655" pid="0" iid="55">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1214" x="48" flags="00000000" y="121" h="909" pid="0" iid="71">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="31">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="6">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="53">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="56">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1156" x="0" flags="00000020" y="0" h="655" pid="0" iid="77">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="119" h="883" pid="0" iid="69">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="90">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="0" flags="00000000" y="0" h="883" pid="0" iid="93">
     <PROPERTIES/>
    </POPUP>
   </PWI>
