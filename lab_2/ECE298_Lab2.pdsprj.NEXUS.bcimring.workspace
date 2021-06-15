@@ -10,7 +10,7 @@
   <PWI>
    <POPUP w="800" x="48" flags="00000002" y="160" h="200" pid="0" iid="-1">
     <PROPERTIES>
-     <ITEM name="Message Column Width">540</ITEM>
+     <ITEM name="Message Column Width">661</ITEM>
      <ITEM name="ShowGrid">No</ITEM>
      <ITEM name="Source Column Width">100</ITEM>
      <ITEM name="Time Column Width">120</ITEM>
@@ -67,13 +67,49 @@
    <POPUP w="1384" x="322" flags="00000000" y="0" h="883" pid="0" iid="68">
     <PROPERTIES/>
    </POPUP>
-   <POPUP w="1384" x="48" flags="00000000" y="147" h="883" pid="0" iid="18">
+   <POPUP w="1384" x="126" flags="00000000" y="121" h="883" pid="0" iid="18">
     <PROPERTIES/>
    </POPUP>
    <POPUP w="1214" x="68" flags="00000000" y="121" h="909" pid="0" iid="21">
     <PROPERTIES/>
    </POPUP>
    <POPUP w="1156" x="88" flags="00000020" y="200" h="655" pid="0" iid="19">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="237" flags="00000000" y="147" h="883" pid="0" iid="65">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="48" flags="00000000" y="147" h="883" pid="0" iid="86">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="68" flags="00000000" y="147" h="883" pid="0" iid="89">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1214" x="48" flags="00000000" y="121" h="909" pid="0" iid="33">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="68" flags="00000000" y="147" h="883" pid="0" iid="81">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="88" flags="00000000" y="147" h="883" pid="0" iid="82">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1156" x="108" flags="00000020" y="220" h="655" pid="0" iid="62">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1156" x="128" flags="00000020" y="240" h="655" pid="0" iid="103">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1156" x="0" flags="00000020" y="269" h="655" pid="0" iid="104">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1214" x="168" flags="00000000" y="121" h="909" pid="0" iid="116">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="188" flags="00008001" y="147" h="883" pid="0" iid="114">
+    <PROPERTIES/>
+   </POPUP>
+   <POPUP w="1384" x="208" flags="00000000" y="147" h="883" pid="0" iid="115">
     <PROPERTIES/>
    </POPUP>
   </PWI>
