@@ -46,7 +46,7 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
-
+_16_BIT_FLAG = 0xFFFF;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,7 +63,8 @@ void select_ADC_CH12(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+float rpm;
+bool forward_rotation;
 /* USER CODE END 0 */
 
 /**
@@ -76,6 +77,7 @@ int main(void)
   float batteryVoltage;
   float pot1Voltage;
   float pot2Voltage;
+
   uint32_t sample;
 
   /* USER CODE END 1 */
@@ -99,8 +101,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_TIM2_Init();
   MX_TIM5_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_Base_Start_IT(&htim2);
@@ -111,6 +113,7 @@ int main(void)
 
   lcd16x2_init_4bits(GPIOB, GPIO_PIN_1, GPIO_PIN_0,
 		  GPIOA, GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7);
+  lcd16x2_cursorShow(false);
   lcd16x2_printf("Hello World");
   int count = 0;
   /* USER CODE END 2 */
@@ -140,11 +143,14 @@ int main(void)
 	  	sample = HAL_ADC_GetValue(&hadc1);
 
 	  	HAL_ADC_Stop(&hadc1);
-	  	batteryVoltage = (float)sample*12.0/255.0;
+	  	batteryVoltage = (float)sample*3.3/255.0;
 
+	  	//lcd16x2_1stLine();
+	  	//lcd16x2_printf("%.5f", batteryVoltage);
 	  	lcd16x2_2ndLine();
-	  	lcd16x2_printf("%.5f", batteryVoltage);
-	  	HAL_Delay(1000);
+	  	lcd16x2_printf("%f", rpm);
+
+	  	//HAL_Delay(5);
 
   }
   /* USER CODE END 3 */
@@ -261,7 +267,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 159;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 999;
+  htim2.Init.Period = 4292967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -329,7 +335,7 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 159;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 999;
+  htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -403,15 +409,49 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PC6 PC7 PC8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA11 */
   GPIO_InitStruct.Pin = GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ) {
+	if ( GPIO_Pin == GPIO_PIN_6 ) {
+		int f = 0;
+	} else if ( GPIO_Pin == GPIO_PIN_7 ) {
+		int cycle_count = __HAL_TIM_GET_COUNTER(&htim5);
+		//float cycle_freq = (float)cycle_count;
+		rpm = (float)60.0/(1.0e-5*24.0*cycle_count);//1.0e5/cycle_freq;
+
+		__HAL_TIM_SET_COUNTER(&htim5, 0);
+
+		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
+			forward_rotation = false;
+		}
+	} else if ( GPIO_Pin == GPIO_PIN_8 ) {
+		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
+			forward_rotation = true;
+		}
+	}
+}
+
 void select_ADC_CH10(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = ADC_CHANNEL_10;
