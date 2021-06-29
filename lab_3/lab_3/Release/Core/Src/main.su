@@ -1,0 +1,6 @@
+main.c:157:6:SystemClock_Config	88	static,ignoring_inline_asm
+main.c:391:6:select_ADC_CH10	24	static,ignoring_inline_asm
+main.c:402:6:select_ADC_CH11	24	static,ignoring_inline_asm
+main.c:413:6:select_ADC_CH12	24	static,ignoring_inline_asm
+main.c:73:5:main	72	static,ignoring_inline_asm
+main.c:429:6:Error_Handler	0	static,ignoring_inline_asm
