@@ -434,22 +434,26 @@ static void MX_GPIO_Init(void)
 
 void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ) {
 	if ( GPIO_Pin == GPIO_PIN_6 ) {
-		int f = 0;
-	} else if ( GPIO_Pin == GPIO_PIN_7 ) {
-		int cycle_count = __HAL_TIM_GET_COUNTER(&htim5);
-		//float cycle_freq = (float)cycle_count;
-		rpm = (float)60.0/(1.0e-5*24.0*cycle_count);//1.0e5/cycle_freq;
-
-		__HAL_TIM_SET_COUNTER(&htim5, 0);
-
 		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
 			forward_rotation = false;
-		}
-	} else if ( GPIO_Pin == GPIO_PIN_8 ) {
-		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
+		} else {
 			forward_rotation = true;
 		}
+	} else if ( GPIO_Pin == GPIO_PIN_7 ) {
+		int cycle_count = __HAL_TIM_GET_COUNTER(&htim5);
+		rpm = (float)60.0/(1.0e-5*24.0*cycle_count);//1.0e5/cycle_freq;
+
+		if (HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 )) {
+			rpm *= -1.0;
+		}
+
+		__HAL_TIM_SET_COUNTER(&htim5, 0);
 	}
+	//} else if ( GPIO_Pin == GPIO_PIN_8 ) {
+		//if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
+			//forward_rotation = true;
+		//}
+	//}
 }
 
 void select_ADC_CH10(void) {
