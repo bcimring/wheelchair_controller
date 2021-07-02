@@ -1,5 +1,5 @@
-18:33:04 **** Incremental Build of configuration Debug for project lab_3 ****
-make -j12 all 
+06:01:36 **** Incremental Build of configuration Debug for project lab_3 ****
+make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -c -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c:49:1: warning: data definition has no type or storage class
    49 | _16_BIT_FLAG = 0xFFFF;
@@ -23,7 +23,7 @@ arm-none-eabi-objcopy  -O ihex  lab_3.elf  "lab_3.hex"
 arm-none-eabi-objcopy  -O binary  lab_3.elf  "lab_3.bin"
 arm-none-eabi-size   lab_3.elf 
    text	   data	    bss	    dec	    hex	filename
-  38720	    492	   1852	  41064	   a068	lab_3.elf
+  38704	    492	   1852	  41048	   a058	lab_3.elf
 Finished building: default.size.stdout
  
 Finished building: lab_3.hex
@@ -33,5 +33,5 @@ Finished building: lab_3.bin
 Finished building: lab_3.list
  
 
-18:33:06 Build Finished. 0 errors, 5 warnings. (took 2s.245ms)
+06:01:39 Build Finished. 0 errors, 5 warnings. (took 3s.83ms)
 
