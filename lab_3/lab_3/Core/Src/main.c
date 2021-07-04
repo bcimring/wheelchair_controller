@@ -42,11 +42,14 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
-_16_BIT_FLAG = 0xFFFF;
+int _16_BIT_FLAG = 0xFFFF;
+double MID_POT_VOLTAGE = 1.5;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,23 +58,26 @@ static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 void select_ADC_CH10(void);
 void select_ADC_CH11(void);
 void select_ADC_CH12(void);
-float get_pot_voltage(int pot);
-float get_battery_voltage(void);
-float get_rot_speed_l(float pot1Voltage, float pot2Voltage);
-float get_rot_speed_r(float pot1Voltage, float pot2Voltage);
-void set_rotation_speed(float rot_speed_l, float rot_speed_r);
-void display_lcd(float rot_speed_l, float rot_speed_r, int mode);
-void set_leds( float battery_voltage );
+double get_pot_voltage(int pot);
+double get_battery_voltage(void);
+double get_rot_speed_l(double pot1Voltage, double pot2Voltage);
+double get_rot_speed_r(double pot1Voltage, double pot2Voltage);
+void set_rotation_speed(double rot_speed_l, double rot_speed_r);
+void display_lcd(double rot_speed_l, double rot_speed_r, int mode);
+void set_leds( double battery_voltage );
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-float rpm;
+double rrpm;
+double lrpm;
 bool forward_rotation;
 /* USER CODE END 0 */
 
@@ -82,9 +88,13 @@ bool forward_rotation;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  float battery_voltage;
-  float pot1Voltage;
-  float pot2Voltage;
+  double battery_voltage;
+  double pot1Voltage;
+  double pot2Voltage;
+  double rot_speed_l_set;
+  double rot_speed_r_set;
+  double rot_speed_l_sense;
+  double rot_speed_r_sense;
 
   uint32_t sample;
 
@@ -111,6 +121,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
+  MX_TIM1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_Base_Start_IT(&htim2);
@@ -119,11 +131,15 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim5);
   HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
 
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_Base_Start_IT(&htim4);
+
   lcd16x2_init_4bits(GPIOB, GPIO_PIN_1, GPIO_PIN_0,
 		  GPIOA, GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7);
   lcd16x2_cursorShow(false);
 
-  int mode = 0;
+  int mode = 1;
+  int count = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -134,24 +150,24 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	if (count%2 == 0) {
+	/*if (count%2 == 0) {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET); //Turn on green LED on PA5
 	} else {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); //Turn on green LED on PA5
 	}
-	count++;
+	count++;*/
 
 	pot1Voltage = get_pot_voltage(1);
 	pot2Voltage = get_pot_voltage(2);
 
-	rot_speed_l = get_rot_speed_l( pot1Voltage, pot2Voltage );
-	rot_speed_r = get_rot_speed_r( pot1Voltage, pot2Voltage );
+	rot_speed_l_set = get_rot_speed_l( pot1Voltage, pot2Voltage );
+	rot_speed_r_set = get_rot_speed_r( pot1Voltage, pot2Voltage );
 
-	set_rotation_speed( rot_speed_l, rot_speed_r );
-	display_lcd(rot_speed_l, rot_speed_r, mode);
+	set_rotation_speed( rot_speed_l_set, rot_speed_r_set );
+	display_lcd(lrpm, rrpm, mode);
 
-	battery_voltage = get_battery_voltage();
-	set_leds(battery_voltage);
+	//battery_voltage = get_battery_voltage();
+	//set_leds(battery_voltage);
 
   }
   /* USER CODE END 3 */
@@ -221,8 +237,8 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_Ext_IT11;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
@@ -243,6 +259,52 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 159;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 65535;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -268,7 +330,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 159;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4292967295;
+  htim2.Init.Period = 1000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -315,6 +377,51 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 159;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
   * @brief TIM5 Initialization Function
   * @param None
   * @retval None
@@ -336,7 +443,7 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 159;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 4294967295;
+  htim5.Init.Period = 1000;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -388,49 +495,43 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7
-                          |GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_15
-                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT_Pin
+                          |LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA4 PA5 PA6 PA7
-                           PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7
-                          |GPIO_PIN_9;
+  /*Configure GPIO pins : LCD_OUT4_Pin LCD_OUT5_Pin LCD_OUT6_Pin LCD_OUT7_Pin */
+  GPIO_InitStruct.Pin = LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB0 PB1 PB2 PB15
-                           PB3 PB4 PB5 PB6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_15
-                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+  /*Configure GPIO pins : LCD_EN_Pin LCD_RS_Pin LCD_RW_Pin MUX_SELECT_Pin
+                           LED_OUT4_Pin LED_OUT3_Pin LED_OUT2_Pin LED_OUT1_Pin */
+  GPIO_InitStruct.Pin = LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT_Pin
+                          |LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC6 PC7 PC8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8;
+  /*Configure GPIO pins : DC_MOTOR_1_Q1_Pin DC_MOTOR_2_Q1_Pin */
+  GPIO_InitStruct.Pin = DC_MOTOR_1_Q1_Pin|DC_MOTOR_2_Q1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  /*Configure GPIO pins : DC_MOTOR_1_Q2_Pin DC_MOTOR_2_Q2_Pin */
+  GPIO_InitStruct.Pin = DC_MOTOR_1_Q2_Pin|DC_MOTOR_2_Q2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -438,20 +539,24 @@ static void MX_GPIO_Init(void)
 
 void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ) {
 	if ( GPIO_Pin == GPIO_PIN_6 ) {
-		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 ) ) {
-			forward_rotation = false;
-		} else {
-			forward_rotation = true;
-		}
-	} else if ( GPIO_Pin == GPIO_PIN_7 ) {
-		int cycle_count = __HAL_TIM_GET_COUNTER(&htim5);
-		rpm = (float)60.0/(1.0e-5*24.0*cycle_count);//1.0e5/cycle_freq;
+		int cycle_count = __HAL_TIM_GET_COUNTER(&htim1);
+		lrpm = (double)60.0/(1.0e-5*24.0*cycle_count);
 
-		if (HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_8 )) {
-			rpm *= -1.0;
+		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_7 ) ) {
+			lrpm *= -1.0;
 		}
 
-		__HAL_TIM_SET_COUNTER(&htim5, 0);
+		__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+	} else if ( GPIO_Pin == GPIO_PIN_8 ) {
+		int cycle_count = __HAL_TIM_GET_COUNTER(&htim4);
+		rrpm = (double)60.0/(1.0e-5*24.0*cycle_count);
+
+		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_9 ) ) {
+			rrpm *= -1.0;
+		}
+
+		__HAL_TIM_SET_COUNTER(&htim4, 0);
 	}
 }
 
@@ -488,7 +593,7 @@ void select_ADC_CH12(void) {
   }
 }
 
-float get_pot_voltage( int pot ) {
+double get_pot_voltage( int pot ) {
 	if (pot == 1) {
 		select_ADC_CH11();
 	} else if (pot == 2) {
@@ -497,64 +602,71 @@ float get_pot_voltage( int pot ) {
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 	uint8_t sample = HAL_ADC_GetValue(&hadc1);
-	float ret = (float)sample*(3.3/255.0);
+	double ret = (double) sample*(3.3/255.0);
 
 	return ret;
 }
 
-float get_battery_voltage(void) {
+double get_battery_voltage(void) {
 	select_ADC_CH10();
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 	uint8_t sample = HAL_ADC_GetValue(&hadc1);
-	float ret = (float)sample*(12.0/255.0);
+	double ret = (double) sample*(12.0/255.0);
 
 	return ret;
-
 }
 
-float get_rot_speed_l( float pot1Voltage, float pot2Voltage ) {
-	int speed_setting = (int)(pot1Voltage - MID_POT_VOLTAGE)/10;
-	int steer_setting = (int)(pot2Voltage - MID_POT_VOLTAGE)/10;
+double get_rot_speed_l( double pot1Voltage, double pot2Voltage ) {
+	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
+	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
 
-	float rot_speed;
-	if (steer_setting >= 0) {
-		rot_speed = 40*speed_setting;
+	double rot_speed;
+	double speed_factor = 4*speed_setting;
+
+	if (steer_setting >= 0.0) {
+		rot_speed = speed_factor*10;
 	} else {
-		rot_speed = 40*(speed_setting + steer_setting + 1);
+		rot_speed = speed_factor*(10 + steer_setting);
 	}
 
 	return rot_speed;
 }
 
-float get_rot_speed_r( float pot1Voltage, float pot2Voltage ) {
-	int speed_setting = (int)(pot1Voltage - MID_POT_VOLTAGE)/10;
-	int steer_setting = (int)(pot2Voltage - MID_POT_VOLTAGE)/10;
+double get_rot_speed_r( double pot1Voltage, double pot2Voltage ) {
+	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
+	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
 
-	float rot_speed;
-	if (steer_setting <= 0) {
-		rot_speed = 40*speed_setting;
+	double rot_speed;
+	double speed_factor = 4*speed_setting;
+
+	if (steer_setting >= 0.0) {
+		rot_speed = speed_factor*(10 - steer_setting);
 	} else {
-		rot_speed = 40*(speed_setting - steer_setting + 1);
+		rot_speed = speed_factor*10;
 	}
 
 	return rot_speed;
 }
 
-void set_rotation_speed( float rot_speed_l, float rot_speed_r ) {
-	if (( rot_speed_l <= 0.0 ) && ( rot_speed_r <= 0.0 )) {
+void set_rotation_speed( double rot_speed_l_set, double rot_speed_r_set ) {
+	if (( rot_speed_l_set <= 0.0 ) && ( rot_speed_r_set <= 0.0 )) {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
 	} else {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
 	}
 
-	int duty_cycle_1 = (int)abs(rot_speed_l*1000.0/400.0);
-	int duty_cycle_2 = (int)abs(rot_speed_l*1000.0/400.0);
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, duty_cycle_1);
-	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, duty_cycle_2);
+	double fduty_cycle_1 = fabs(rot_speed_l_set*1000.0/400.0);
+	double fduty_cycle_2 = fabs(rot_speed_r_set*1000.0/400.0);
+
+	int pulse_1 = (int) fduty_cycle_1;
+	int pulse_2 = (int) fduty_cycle_2;
+
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse_1);
+	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, pulse_2);
 }
 
-void display_lcd(rot_speed_l, rot_speed_r, mode) {
+void display_lcd(double rot_speed_l, double rot_speed_r, int mode) {
 	lcd16x2_1stLine();
 	if (mode == 1) {
 		lcd16x2_printf("LRPM|  ON  |RRPM");
@@ -563,10 +675,10 @@ void display_lcd(rot_speed_l, rot_speed_r, mode) {
 	}
 
 	lcd16x2_2ndLine();
-	lcd16x2_printf("%.2f   %.2f", rot_speed_l, rot_speed_r);
+	lcd16x2_printf("%.2f %.5f", rot_speed_l, rot_speed_r);
 }
 
-void set_leds(float battery_voltage) {
+void set_leds(double battery_voltage) {
 	__NOP();
 }
 

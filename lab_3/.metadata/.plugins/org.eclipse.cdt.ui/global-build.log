@@ -1,20 +1,31 @@
-06:01:36 **** Incremental Build of configuration Debug for project lab_3 ****
+17:02:39 **** Incremental Build of configuration Debug for project lab_3 ****
 make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -c -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-../Core/Src/main.c:49:1: warning: data definition has no type or storage class
-   49 | _16_BIT_FLAG = 0xFFFF;
-      | ^~~~~~~~~~~~
-../Core/Src/main.c:49:1: warning: type defaults to 'int' in declaration of '_16_BIT_FLAG' [-Wimplicit-int]
 ../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:79:9: warning: unused variable 'pot2Voltage' [-Wunused-variable]
-   79 |   float pot2Voltage;
-      |         ^~~~~~~~~~~
-../Core/Src/main.c:78:9: warning: unused variable 'pot1Voltage' [-Wunused-variable]
-   78 |   float pot1Voltage;
-      |         ^~~~~~~~~~~
-../Core/Src/main.c:77:9: warning: variable 'batteryVoltage' set but not used [-Wunused-but-set-variable]
-   77 |   float batteryVoltage;
-      |         ^~~~~~~~~~~~~~
+../Core/Src/main.c:142:7: warning: unused variable 'count' [-Wunused-variable]
+  142 |   int count = 0;
+      |       ^~~~~
+../Core/Src/main.c:99:12: warning: unused variable 'sample' [-Wunused-variable]
+   99 |   uint32_t sample;
+      |            ^~~~~~
+../Core/Src/main.c:97:10: warning: unused variable 'rot_speed_r_sense' [-Wunused-variable]
+   97 |   double rot_speed_r_sense;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:96:10: warning: unused variable 'rot_speed_l_sense' [-Wunused-variable]
+   96 |   double rot_speed_l_sense;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:91:10: warning: unused variable 'battery_voltage' [-Wunused-variable]
+   91 |   double battery_voltage;
+      |          ^~~~~~~~~~~~~~~
+../Core/Src/main.c: In function 'set_rotation_speed':
+../Core/Src/main.c:659:25: warning: implicit declaration of function 'fabs' [-Wimplicit-function-declaration]
+  659 |  double fduty_cycle_1 = fabs(rot_speed_l_set*1000.0/400.0);
+      |                         ^~~~
+../Core/Src/main.c:659:25: warning: incompatible implicit declaration of built-in function 'fabs'
+../Core/Src/main.c:26:1: note: include '<math.h>' or provide a declaration of 'fabs'
+   25 | #include "lcd16x2.h"
+  +++ |+#include <math.h>
+   26 | /* USER CODE END Includes */
 arm-none-eabi-gcc -o "lab_3.elf" @"objects.list"   -mcpu=cortex-m4 -T"N:\ECE_298\wheelchair_controller\lab_3\lab_3\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab_3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: lab_3.elf
  
@@ -23,7 +34,7 @@ arm-none-eabi-objcopy  -O ihex  lab_3.elf  "lab_3.hex"
 arm-none-eabi-objcopy  -O binary  lab_3.elf  "lab_3.bin"
 arm-none-eabi-size   lab_3.elf 
    text	   data	    bss	    dec	    hex	filename
-  38704	    492	   1852	  41048	   a058	lab_3.elf
+  39968	    492	   2016	  42476	   a5ec	lab_3.elf
 Finished building: default.size.stdout
  
 Finished building: lab_3.hex
