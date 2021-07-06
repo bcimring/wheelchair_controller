@@ -71,6 +71,8 @@ double get_rot_speed_r(double pot1Voltage, double pot2Voltage);
 void set_rotation_speed(double rot_speed_l, double rot_speed_r);
 void display_lcd(double rot_speed_l, double rot_speed_r, int mode);
 void set_leds( double battery_voltage );
+void switch_1();
+void switch_2();
 
 /* USER CODE END PFP */
 
@@ -528,6 +530,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SWITCH_1_Pin SWITCH_2_Pin */
+  GPIO_InitStruct.Pin = SWITCH_1_Pin|SWITCH_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
