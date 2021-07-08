@@ -1,0 +1,19 @@
+/*
+ * pid.c
+ *
+ *  Created on: Jul. 7, 2021
+ *      Author: bcimring
+ */
+
+#include "pid.h"
+
+void init_pid(struct PID *controller, double K_p, double K_i, double K_d, int max, int min) {
+	controller->K_p = K_p;
+	controller->K_i = K_i;
+	controller->K_d = K_d;
+	controller->e = 0.0;
+	controller->u = 0.0;
+	controller->i = 0.0;
+	controller->max = max;
+	controller->min = min;
+}

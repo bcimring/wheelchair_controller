@@ -1,0 +1,22 @@
+/*
+ * pid.h
+ *
+ *  Created on: Jul. 7, 2021
+ *      Author: bcimring
+ */
+
+#ifndef SRC_PID_H_
+#define SRC_PID_H_
+
+struct PID{
+	  double K_i;
+	  double K_p;
+	  double K_d;
+	  double e;
+	  double u;
+	  double i;
+	  double max;
+	  double min;
+};
+
+#endif /* SRC_PID_H_ */

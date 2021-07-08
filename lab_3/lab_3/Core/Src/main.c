@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lcd16x2.h"
+#include "pid.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,13 +66,17 @@ static void MX_TIM4_Init(void);
 void select_ADC_CH10(void);
 void select_ADC_CH11(void);
 void select_ADC_CH12(void);
+
 double get_pot_voltage(int pot);
 double get_battery_voltage(void);
-double get_rot_speed_l(double pot1Voltage, double pot2Voltage);
-double get_rot_speed_r(double pot1Voltage, double pot2Voltage);
+
+double get_rot_speed_set_l(double pot1Voltage, double pot2Voltage);
+double get_rot_speed_set_r(double pot1Voltage, double pot2Voltage);
 void set_rotation_speed(double rot_speed_l, double rot_speed_r);
-void display_lcd(double rot_speed_l, double rot_speed_r, int mode);
+
+void display_lcd(int mode);
 void set_leds( double battery_voltage );
+
 void switch_1();
 void switch_2();
 
@@ -81,6 +87,7 @@ void switch_2();
 double rrpm;
 double lrpm;
 bool forward_rotation;
+
 /* USER CODE END 0 */
 
 /**
@@ -97,6 +104,8 @@ int main(void)
   double rot_speed_r_set;
   double rot_speed_l_sense;
   double rot_speed_r_sense;
+  int pulse_r;
+  int pulse_l;
 
   uint32_t sample;
 
@@ -141,36 +150,52 @@ int main(void)
   lcd16x2_cursorShow(false);
 
   int mode = 1;
-  int count = 0;
+
+
+  struct PID *pid_motor_r, pid1;
+  pid_motor_r = &pid1;
+  struct PID *pid_motor_l, pid2;
+  pid_motor_l = &pid2;
+
+  double K_i = 0.1;
+  double K_p = 0.1;
+  double K_d = 0.1;
+  int max_pulse = 999;
+  int min_pulse = -999;
+
+  init_pid(pid_motor_r, K_p, K_i, K_d, max_pulse, min_pulse);
+  init_pid(pid_motor_l, K_p, K_i, K_d, max_pulse, min_pulse);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+	  if (mode == 1) {
 
-    /* USER CODE BEGIN 3 */
+		  pot1Voltage = get_pot_voltage(1);
+		  pot2Voltage = get_pot_voltage(2);
 
-	/*if (count%2 == 0) {
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET); //Turn on green LED on PA5
-	} else {
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); //Turn on green LED on PA5
-	}
-	count++;*/
+		  rot_speed_l_set = get_rot_speed_set_l( pot1Voltage, pot2Voltage );
+		  rot_speed_r_set = get_rot_speed_set_r( pot1Voltage, pot2Voltage );
 
-	pot1Voltage = get_pot_voltage(1);
-	pot2Voltage = get_pot_voltage(2);
+		  pid_motor_l->u = rot_speed_l_set;
+		  pid_motor_r->u = rot_speed_r_set;
 
-	rot_speed_l_set = get_rot_speed_l( pot1Voltage, pot2Voltage );
-	rot_speed_r_set = get_rot_speed_r( pot1Voltage, pot2Voltage );
+		  pulse_l = set_pulse_PID(pid_motor_l, rot_speed_l_set, lrpm);
+		  pulse_r = set_pulse_PID(pid_motor_r, rot_speed_r_set, rrpm);
 
-	set_rotation_speed( rot_speed_l_set, rot_speed_r_set );
-	display_lcd(lrpm, rrpm, mode);
+		  set_rotation_speed( pulse_l, pulse_r );
 
-	//battery_voltage = get_battery_voltage();
-	//set_leds(battery_voltage);
+		  display_lcd(mode);
 
+		  battery_voltage = get_battery_voltage();
+		  //set_leds(battery_voltage);
+
+	  } else {
+		  __NOP();
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -359,7 +384,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -468,7 +493,7 @@ static void MX_TIM5_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -607,9 +632,11 @@ double get_pot_voltage( int pot ) {
 	} else if (pot == 2) {
 		select_ADC_CH12();
 	}
+
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 	uint8_t sample = HAL_ADC_GetValue(&hadc1);
+
 	double ret = (double) sample*(3.3/255.0);
 
 	return ret;
@@ -625,7 +652,7 @@ double get_battery_voltage(void) {
 	return ret;
 }
 
-double get_rot_speed_l( double pot1Voltage, double pot2Voltage ) {
+double get_rot_speed_set_l( double pot1Voltage, double pot2Voltage ) {
 	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
 	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
 
@@ -641,7 +668,7 @@ double get_rot_speed_l( double pot1Voltage, double pot2Voltage ) {
 	return rot_speed;
 }
 
-double get_rot_speed_r( double pot1Voltage, double pot2Voltage ) {
+double get_rot_speed_set_r( double pot1Voltage, double pot2Voltage ) {
 	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
 	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
 
@@ -657,24 +684,21 @@ double get_rot_speed_r( double pot1Voltage, double pot2Voltage ) {
 	return rot_speed;
 }
 
-void set_rotation_speed( double rot_speed_l_set, double rot_speed_r_set ) {
-	if (( rot_speed_l_set <= 0.0 ) && ( rot_speed_r_set <= 0.0 )) {
+void set_rotation_speed( double pulse_l, double pulse_r ) {
+	if (( pulse_l <= 0.0 ) && ( pulse_r <= 0.0 )) {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
 	} else {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
 	}
 
-	double fduty_cycle_1 = fabs(rot_speed_l_set*1000.0/400.0);
-	double fduty_cycle_2 = fabs(rot_speed_r_set*1000.0/400.0);
+	int pulse_li = (int) pulse_l;
+	int pulse_ri = (int) pulse_r;
 
-	int pulse_1 = (int) fduty_cycle_1;
-	int pulse_2 = (int) fduty_cycle_2;
-
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse_1);
-	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, pulse_2);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, abs(pulse_li));
+	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, abs(pulse_ri));
 }
 
-void display_lcd(double rot_speed_l, double rot_speed_r, int mode) {
+void display_lcd(int mode) {
 	lcd16x2_1stLine();
 	if (mode == 1) {
 		lcd16x2_printf("LRPM|  ON  |RRPM");
@@ -683,7 +707,7 @@ void display_lcd(double rot_speed_l, double rot_speed_r, int mode) {
 	}
 
 	lcd16x2_2ndLine();
-	lcd16x2_printf("%.2f %.5f", rot_speed_l, rot_speed_r);
+	lcd16x2_printf("%.0f\t\t\t\t\t\t\t\t\t\t%.0f", lrpm, rrpm);
 }
 
 void set_leds(double battery_voltage) {

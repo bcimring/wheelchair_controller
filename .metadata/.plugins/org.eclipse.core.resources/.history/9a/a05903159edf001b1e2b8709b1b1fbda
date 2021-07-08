@@ -1,0 +1,49 @@
+/*
+ * pid.c
+ *
+ *  Created on: Jul. 7, 2021
+ *      Author: bcimring
+ */
+
+#include "pid.h"
+
+/* LCD Library Variables */
+static double K_p, K_i, K_d;
+static GPIO_TypeDef* PORT_RS_and_E;               // RS and E PORT
+static uint16_t PIN_RS, PIN_E;                    // RS and E pins
+static GPIO_TypeDef* PORT_LSB;                    // LSBs D0, D1, D2 and D3 PORT
+static uint16_t D0_PIN, D1_PIN, D2_PIN, D3_PIN;   // LSBs D0, D1, D2 and D3 pins
+static GPIO_TypeDef* PORT_MSB;                    // MSBs D5, D6, D7 and D8 PORT
+static uint16_t D4_PIN, D5_PIN, D6_PIN, D7_PIN;   // MSBs D5, D6, D7 and D8 pins
+#define T_CONST   20
+static uint8_t DisplayControl = 0x0F;
+static uint8_t FunctionSet = 0x38;
+
+void init_pid(struct PID *controller, double K_p, double K_i, double K_d, int max, int min) {
+	controller->K_p = K_p;
+	controller->K_i = K_i;
+	controller->K_d = K_d;
+	controller->e = 0.0;
+	controller->u = 0.0;
+	controller->i = 0.0;
+	controller->max = max;
+	controller->min = min;
+}
+
+double set_pulse_PID(struct PID *pid, double sp, double pv) {
+	double e_prev = pid->e;
+	pid->e = sp - pv;
+	double tmp_i = pid->i + pid->e;
+
+	double out = pid->K_p *(pid->e)  +  pid->K_i * (tmp_i)  +  pid->K_d *(e_prev - pid->e);
+
+	if (( out < pid->max ) && ( out > pid->min )) {
+		pid->i = tmp_i;
+	} else if ( out >= pid->max ) {
+		out = pid->max;
+	} else if ( out <= pid->min ) {
+		out = pid->min;
+	}
+
+	return out;
+}

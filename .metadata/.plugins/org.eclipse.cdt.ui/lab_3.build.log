@@ -1,0 +1,47 @@
+00:16:20 **** Incremental Build of configuration Debug for project lab_3 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE -c -I../Drivers/CMSIS/Include -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I"N:/ECE_298/wheelchair_controller/lab_3/lab_3/Core/Src" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:110:12: warning: unused variable 'sample' [-Wunused-variable]
+  110 |   uint32_t sample;
+      |            ^~~~~~
+../Core/Src/main.c:106:10: warning: unused variable 'rot_speed_r_sense' [-Wunused-variable]
+  106 |   double rot_speed_r_sense;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:105:10: warning: unused variable 'rot_speed_l_sense' [-Wunused-variable]
+  105 |   double rot_speed_l_sense;
+      |          ^~~~~~~~~~~~~~~~~
+../Core/Src/main.c:100:10: warning: variable 'battery_voltage' set but not used [-Wunused-but-set-variable]
+  100 |   double battery_voltage;
+      |          ^~~~~~~~~~~~~~~
+In file included from ../Core/Inc/stm32f4xx_hal_conf.h:402,
+                 from ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:30,
+                 from ../Core/Inc/main.h:31,
+                 from ../Core/Src/main.c:21:
+../Core/Src/main.c: In function 'set_rotation_speed':
+../Core/Src/main.c:697:47: warning: implicit declaration of function 'abs' [-Wimplicit-function-declaration]
+  697 |  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, abs(pulse_li));
+      |                                               ^~~
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:1386:72: note: in definition of macro '__HAL_TIM_SET_COMPARE'
+ 1386 |   (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCR1 = (__COMPARE__)) :\
+      |                                                                        ^~~~~~~~~~~
+arm-none-eabi-gcc -o "lab_3.elf" @"objects.list"   -mcpu=cortex-m4 -T"N:\ECE_298\wheelchair_controller\lab_3\lab_3\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab_3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: lab_3.elf
+ 
+arm-none-eabi-objdump -h -S  lab_3.elf  > "lab_3.list"
+arm-none-eabi-objcopy  -O ihex  lab_3.elf  "lab_3.hex"
+arm-none-eabi-objcopy  -O binary  lab_3.elf  "lab_3.bin"
+arm-none-eabi-size   lab_3.elf 
+   text	   data	    bss	    dec	    hex	filename
+  40792	    492	   2016	  43300	   a924	lab_3.elf
+Finished building: default.size.stdout
+ 
+Finished building: lab_3.hex
+Finished building: lab_3.bin
+ 
+ 
+Finished building: lab_3.list
+ 
+
+00:16:22 Build Finished. 0 errors, 5 warnings. (took 2s.302ms)
+
