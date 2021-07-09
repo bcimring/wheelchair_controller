@@ -84,8 +84,10 @@ void Error_Handler(void);
 #define LCD_RS_GPIO_Port GPIOB
 #define LCD_RW_Pin GPIO_PIN_2
 #define LCD_RW_GPIO_Port GPIOB
-#define MUX_SELECT_Pin GPIO_PIN_15
-#define MUX_SELECT_GPIO_Port GPIOB
+#define MUX_SELECT2_Pin GPIO_PIN_14
+#define MUX_SELECT2_GPIO_Port GPIOB
+#define MUX_SELECT1_Pin GPIO_PIN_15
+#define MUX_SELECT1_GPIO_Port GPIOB
 #define DC_MOTOR_1_Q1_Pin GPIO_PIN_6
 #define DC_MOTOR_1_Q1_GPIO_Port GPIOC
 #define DC_MOTOR_1_Q1_EXTI_IRQn EXTI9_5_IRQn

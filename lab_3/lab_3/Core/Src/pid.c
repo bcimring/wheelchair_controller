@@ -23,7 +23,7 @@ double set_pulse_PID(struct PID *pid, double sp, double pv) {
 	pid->e = sp - pv;
 	double tmp_i = pid->i + pid->e;
 
-	double out = pid->K_p *(pid->e)  +  pid->K_i * (tmp_i)  +  pid->K_d *(e_prev - pid->e);
+	double out = pid->K_p *(pid->e)  +  pid->K_i * (tmp_i)  +  pid->K_d *(pid->e - e_prev);
 
 	if (( out < pid->max ) && ( out > pid->min )) {
 		pid->i = tmp_i;

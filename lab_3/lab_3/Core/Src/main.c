@@ -102,12 +102,9 @@ int main(void)
   double pot2Voltage;
   double rot_speed_l_set;
   double rot_speed_r_set;
-  double rot_speed_l_sense;
-  double rot_speed_r_sense;
   int pulse_r;
   int pulse_l;
 
-  uint32_t sample;
 
   /* USER CODE END 1 */
 
@@ -157,8 +154,8 @@ int main(void)
   struct PID *pid_motor_l, pid2;
   pid_motor_l = &pid2;
 
-  double K_i = 0.1;
-  double K_p = 0.1;
+  double K_i = 1;
+  double K_p = 10;
   double K_d = 0.1;
   int max_pulse = 999;
   int min_pulse = -999;
@@ -171,31 +168,34 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-	  if (mode == 1) {
+    {
+  	  if (mode == 1) {
 
-		  pot1Voltage = get_pot_voltage(1);
-		  pot2Voltage = get_pot_voltage(2);
+  		  pot1Voltage = get_pot_voltage(1);
+  		  pot2Voltage = get_pot_voltage(2);
 
-		  rot_speed_l_set = get_rot_speed_set_l( pot1Voltage, pot2Voltage );
-		  rot_speed_r_set = get_rot_speed_set_r( pot1Voltage, pot2Voltage );
+  		  rot_speed_l_set = get_rot_speed_set_l( pot1Voltage, pot2Voltage );
+  		  rot_speed_r_set = get_rot_speed_set_r( pot1Voltage, pot2Voltage );
 
-		  pid_motor_l->u = rot_speed_l_set;
-		  pid_motor_r->u = rot_speed_r_set;
+  		  pid_motor_l->u = rot_speed_l_set;
+  		  pid_motor_r->u = rot_speed_r_set;
 
-		  pulse_l = set_pulse_PID(pid_motor_l, rot_speed_l_set, lrpm);
-		  pulse_r = set_pulse_PID(pid_motor_r, rot_speed_r_set, rrpm);
+  		  pulse_l = set_pulse_PID(pid_motor_l, rot_speed_l_set, lrpm);
+  		  pulse_r = set_pulse_PID(pid_motor_r, rot_speed_r_set, rrpm);
 
-		  set_rotation_speed( pulse_l, pulse_r );
+  		  set_rotation_speed( pulse_l, pulse_r );
 
-		  display_lcd(mode);
+  		  display_lcd(mode);
 
-		  battery_voltage = get_battery_voltage();
-		  //set_leds(battery_voltage);
+  		  battery_voltage = get_battery_voltage();
+  		  //set_leds(battery_voltage);
 
-	  } else {
-		  __NOP();
-	  }
+  	  } else {
+  		  __NOP();
+  	  }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -384,7 +384,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -493,7 +493,7 @@ static void MX_TIM5_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -525,8 +525,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT_Pin
-                          |LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
+                          |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
+                          |LED_OUT1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LCD_OUT4_Pin LCD_OUT5_Pin LCD_OUT6_Pin LCD_OUT7_Pin */
   GPIO_InitStruct.Pin = LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin;
@@ -535,10 +536,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LCD_EN_Pin LCD_RS_Pin LCD_RW_Pin MUX_SELECT_Pin
-                           LED_OUT4_Pin LED_OUT3_Pin LED_OUT2_Pin LED_OUT1_Pin */
-  GPIO_InitStruct.Pin = LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT_Pin
-                          |LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin;
+  /*Configure GPIO pins : LCD_EN_Pin LCD_RS_Pin LCD_RW_Pin MUX_SELECT2_Pin
+                           MUX_SELECT1_Pin LED_OUT4_Pin LED_OUT3_Pin LED_OUT2_Pin
+                           LED_OUT1_Pin */
+  GPIO_InitStruct.Pin = LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
+                          |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
+                          |LED_OUT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -685,11 +688,18 @@ double get_rot_speed_set_r( double pot1Voltage, double pot2Voltage ) {
 }
 
 void set_rotation_speed( double pulse_l, double pulse_r ) {
-	if (( pulse_l <= 0.0 ) && ( pulse_r <= 0.0 )) {
+	if ( pulse_l <= 0.0 ){
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
 	} else {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
 	}
+
+	if ( pulse_r <= 0.0 ){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+	} else {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+	}
+
 
 	int pulse_li = (int) pulse_l;
 	int pulse_ri = (int) pulse_r;
@@ -707,7 +717,7 @@ void display_lcd(int mode) {
 	}
 
 	lcd16x2_2ndLine();
-	lcd16x2_printf("%.0f\t\t\t\t\t\t\t\t\t\t%.0f", lrpm, rrpm);
+	lcd16x2_printf("%.0f\t\t\t\t\t\t\t\t\t%.0f   ", lrpm, rrpm);
 }
 
 void set_leds(double battery_voltage) {
