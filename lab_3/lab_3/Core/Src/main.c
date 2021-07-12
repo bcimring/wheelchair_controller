@@ -75,7 +75,8 @@ double get_rot_speed_set_r(double pot1Voltage, double pot2Voltage);
 void set_rotation_speed(double rot_speed_l, double rot_speed_r);
 
 void display_lcd(int mode);
-void set_leds( double battery_voltage );
+void set_battery_leds( double battery_voltage );
+void set_controller_led( int mode );
 
 void switch_1();
 void switch_2();
@@ -171,6 +172,8 @@ int main(void)
     {
   	  if (mode == 1) {
 
+  		  set_controller_led(mode);
+
   		  pot1Voltage = get_pot_voltage(1);
   		  pot2Voltage = get_pot_voltage(2);
 
@@ -188,6 +191,8 @@ int main(void)
   		  display_lcd(mode);
 
   		  battery_voltage = get_battery_voltage();
+
+  		  set_battery_leds(battery_voltage);
   		  //set_leds(battery_voltage);
 
   	  } else {
@@ -527,7 +532,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
                           |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
-                          |LED_OUT1_Pin, GPIO_PIN_RESET);
+                          |LED_OUT1_Pin|LED_OUT0_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LCD_OUT4_Pin LCD_OUT5_Pin LCD_OUT6_Pin LCD_OUT7_Pin */
   GPIO_InitStruct.Pin = LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin;
@@ -538,10 +543,10 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : LCD_EN_Pin LCD_RS_Pin LCD_RW_Pin MUX_SELECT2_Pin
                            MUX_SELECT1_Pin LED_OUT4_Pin LED_OUT3_Pin LED_OUT2_Pin
-                           LED_OUT1_Pin */
+                           LED_OUT1_Pin LED_OUT0_Pin */
   GPIO_InitStruct.Pin = LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
                           |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
-                          |LED_OUT1_Pin;
+                          |LED_OUT1_Pin|LED_OUT0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -720,8 +725,41 @@ void display_lcd(int mode) {
 	lcd16x2_printf("%.0f\t\t\t\t\t\t\t\t\t%.0f   ", lrpm, rrpm);
 }
 
-void set_leds(double battery_voltage) {
+void set_battery_leds(double battery_voltage) {
 	__NOP();
+	if (battery_voltage >= 90){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+	}
+	else if (battery_voltage >= 80) {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+	}
+	else if (battery_voltage >= 60){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+	}
+	else if (battery_voltage < 60) {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
+	}
+}
+
+void set_controller_led(int mode) {
+	if (mode == 1) {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
+	}
+	else {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 0);
+	}
 }
 
 /* USER CODE END 4 */

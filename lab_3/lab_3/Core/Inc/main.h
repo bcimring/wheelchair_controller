@@ -110,6 +110,8 @@ void Error_Handler(void);
 #define LED_OUT2_GPIO_Port GPIOB
 #define LED_OUT1_Pin GPIO_PIN_6
 #define LED_OUT1_GPIO_Port GPIOB
+#define LED_OUT0_Pin GPIO_PIN_7
+#define LED_OUT0_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
