@@ -100,8 +100,6 @@ void Error_Handler(void);
 #define DC_MOTOR_2_Q2_GPIO_Port GPIOC
 #define SWITCH_1_Pin GPIO_PIN_10
 #define SWITCH_1_GPIO_Port GPIOA
-#define SWITCH_2_Pin GPIO_PIN_11
-#define SWITCH_2_GPIO_Port GPIOA
 #define LED_OUT4_Pin GPIO_PIN_3
 #define LED_OUT4_GPIO_Port GPIOB
 #define LED_OUT3_Pin GPIO_PIN_4

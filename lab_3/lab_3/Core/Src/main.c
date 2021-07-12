@@ -78,8 +78,7 @@ void display_lcd(int mode);
 void set_battery_leds( double battery_voltage );
 void set_controller_led( int mode );
 
-void switch_1();
-void switch_2();
+int get_switch();
 
 /* USER CODE END PFP */
 
@@ -170,9 +169,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
     {
-  	  if (mode == 1) {
 
-  		  set_controller_led(mode);
+	  if (get_switch() == 1) {
+		  mode = 1;
+	  } else mode = 0;
+
+	  set_controller_led(mode);
+
+  	  if (mode == 1) {
 
   		  pot1Voltage = get_pot_voltage(1);
   		  pot2Voltage = get_pot_voltage(2);
@@ -564,11 +568,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SWITCH_1_Pin SWITCH_2_Pin */
-  GPIO_InitStruct.Pin = SWITCH_1_Pin|SWITCH_2_Pin;
+  /*Configure GPIO pin : SWITCH_1_Pin */
+  GPIO_InitStruct.Pin = SWITCH_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(SWITCH_1_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
@@ -726,7 +730,6 @@ void display_lcd(int mode) {
 }
 
 void set_battery_leds(double battery_voltage) {
-	__NOP();
 	if (battery_voltage >= 90){
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
@@ -760,6 +763,12 @@ void set_controller_led(int mode) {
 	else {
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 0);
 	}
+}
+
+int get_switch() {
+	if (HAL_GPIO_ReadPin( GPIOA, GPIO_PIN_10 )) { //if switch on, return 1, else return 0
+		return 1;
+	} else return 0;
 }
 
 /* USER CODE END 4 */
