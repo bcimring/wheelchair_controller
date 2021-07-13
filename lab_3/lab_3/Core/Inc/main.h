@@ -101,8 +101,8 @@ void Error_Handler(void);
 #define SWITCH_Pin GPIO_PIN_10
 #define SWITCH_GPIO_Port GPIOA
 #define SWITCH_EXTI_IRQn EXTI15_10_IRQn
-#define LED_OUT4_Pin GPIO_PIN_3
-#define LED_OUT4_GPIO_Port GPIOB
+#define LED_OUT4_Pin GPIO_PIN_12
+#define LED_OUT4_GPIO_Port GPIOC
 #define LED_OUT3_Pin GPIO_PIN_4
 #define LED_OUT3_GPIO_Port GPIOB
 #define LED_OUT2_Pin GPIO_PIN_5
