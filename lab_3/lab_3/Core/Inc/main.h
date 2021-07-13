@@ -98,8 +98,9 @@ void Error_Handler(void);
 #define DC_MOTOR_2_Q1_EXTI_IRQn EXTI9_5_IRQn
 #define DC_MOTOR_2_Q2_Pin GPIO_PIN_9
 #define DC_MOTOR_2_Q2_GPIO_Port GPIOC
-#define SWITCH_1_Pin GPIO_PIN_10
-#define SWITCH_1_GPIO_Port GPIOA
+#define SWITCH_Pin GPIO_PIN_10
+#define SWITCH_GPIO_Port GPIOA
+#define SWITCH_EXTI_IRQn EXTI15_10_IRQn
 #define LED_OUT4_Pin GPIO_PIN_3
 #define LED_OUT4_GPIO_Port GPIOB
 #define LED_OUT3_Pin GPIO_PIN_4

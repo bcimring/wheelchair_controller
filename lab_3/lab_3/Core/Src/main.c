@@ -568,15 +568,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SWITCH_1_Pin */
-  GPIO_InitStruct.Pin = SWITCH_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : SWITCH_Pin */
+  GPIO_InitStruct.Pin = SWITCH_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SWITCH_1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SWITCH_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -602,6 +605,11 @@ void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ) {
 		}
 
 		__HAL_TIM_SET_COUNTER(&htim4, 0);
+
+	} else if ( GPIO_Pin == GPIO_PIN_10 ) {
+		if (mode == 1 ) {
+			mode = 0;
+		} else mode = 1;
 	}
 }
 
