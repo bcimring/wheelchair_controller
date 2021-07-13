@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd16x2.h"
 #include "pid.h"
+#include <stdlib.h>
 
 /* USER CODE END Includes */
 
@@ -52,6 +53,8 @@ TIM_HandleTypeDef htim5;
 /* USER CODE BEGIN PV */
 int _16_BIT_FLAG = 0xFFFF;
 double MID_POT_VOLTAGE = 1.5;
+int mode = 1;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -145,9 +148,6 @@ int main(void)
   lcd16x2_init_4bits(GPIOB, GPIO_PIN_1, GPIO_PIN_0,
 		  GPIOA, GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7);
   lcd16x2_cursorShow(false);
-
-  int mode = 1;
-
 
   struct PID *pid_motor_r, pid1;
   pid_motor_r = &pid1;
@@ -738,29 +738,37 @@ void display_lcd(int mode) {
 }
 
 void set_battery_leds(double battery_voltage) {
-	if (battery_voltage >= 90){
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+	if (mode == 1) {
+		if (battery_voltage >= 10.8){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
+		}
+		else if (battery_voltage >= 9.6) {
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+		}
+		else if (battery_voltage >= 7.2){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+		}
+		else if (battery_voltage < 7.2) {
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+		}
+	}
+	else {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
-	}
-	else if (battery_voltage >= 80) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
-	}
-	else if (battery_voltage >= 60){
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
-	}
-	else if (battery_voltage < 60) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
 	}
 }
 
