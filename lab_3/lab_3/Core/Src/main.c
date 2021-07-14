@@ -24,7 +24,10 @@
 /* USER CODE BEGIN Includes */
 #include "lcd16x2.h"
 #include "pid.h"
-#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -47,14 +50,14 @@ ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
 int _16_BIT_FLAG = 0xFFFF;
 double MID_POT_VOLTAGE = 1.5;
-int mode = 1;
-
+double VBAT_MAX = 12.0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,6 +68,7 @@ static void MX_TIM5_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void select_ADC_CH10(void);
 void select_ADC_CH11(void);
@@ -75,21 +79,21 @@ double get_battery_voltage(void);
 
 double get_rot_speed_set_l(double pot1Voltage, double pot2Voltage);
 double get_rot_speed_set_r(double pot1Voltage, double pot2Voltage);
-void set_rotation_speed(double rot_speed_l, double rot_speed_r);
+void set_PWM_pulse( double pulse_l, double pulse_r );
 
-void display_lcd(int mode);
-void set_battery_leds( double battery_voltage );
-void set_controller_led( int mode );
+void display_lcd(void);
+void set_battery_indicator_leds( uint8_t LED_state );
 
-int get_switch();
+void switch_1();
+void switch_2();
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-double rrpm;
-double lrpm;
-bool forward_rotation;
+double rrpm = 0;
+double lrpm = 0;
+bool mode = 1;
 
 /* USER CODE END 0 */
 
@@ -130,38 +134,54 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_TIM5_Init();
-  MX_TIM2_Init();
   MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
+  // begin transmitting 0% duty cycle PWM and timers
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   HAL_TIM_Base_Start_IT(&htim5);
   HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
 
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_Base_Start_IT(&htim4);
 
-  lcd16x2_init_4bits(GPIOB, GPIO_PIN_1, GPIO_PIN_0,
-		  GPIOA, GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6, GPIO_PIN_7);
+  // initialize LCD
+  lcd16x2_init_4bits(GPIOB, LCD_RS_Pin, LCD_EN_Pin,
+		  GPIOA, LCD_OUT4_Pin, LCD_OUT5_Pin, LCD_OUT6_Pin, LCD_OUT7_Pin);
   lcd16x2_cursorShow(false);
 
+  // initialize PID structs to control DC motors
   struct PID *pid_motor_r, pid1;
   pid_motor_r = &pid1;
   struct PID *pid_motor_l, pid2;
   pid_motor_l = &pid2;
 
-  double K_i = 1;
-  double K_p = 10;
-  double K_d = 0.1;
-  int max_pulse = 999;
-  int min_pulse = -999;
+  double K_p = 350;
+  double K_i = 300;
+  double K_d = 75;
+  int max_pulse = 1000;
+  int min_pulse = -1000;
 
   init_pid(pid_motor_r, K_p, K_i, K_d, max_pulse, min_pulse);
   init_pid(pid_motor_l, K_p, K_i, K_d, max_pulse, min_pulse);
+
+  // detect mode and set LEDs before loop
+  if ( HAL_GPIO_ReadPin( GPIOA, GPIO_PIN_10 ) ) {
+	  mode = 1;
+	  HAL_GPIO_WritePin(GPIOC, LED_OUT5_Pin, GPIO_PIN_SET);
+	  HAL_TIM_OC_DelayElapsedCallback(&htim3);
+  } else {
+	  mode = 0;
+  }
 
   /* USER CODE END 2 */
 
@@ -169,15 +189,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
     {
-
-	  if (get_switch() == 1) {
-		  mode = 1;
-	  } else mode = 0;
-
-	  set_controller_led(mode);
-
   	  if (mode == 1) {
-
   		  pot1Voltage = get_pot_voltage(1);
   		  pot2Voltage = get_pot_voltage(2);
 
@@ -190,18 +202,30 @@ int main(void)
   		  pulse_l = set_pulse_PID(pid_motor_l, rot_speed_l_set, lrpm);
   		  pulse_r = set_pulse_PID(pid_motor_r, rot_speed_r_set, rrpm);
 
-  		  set_rotation_speed( pulse_l, pulse_r );
-
-  		  display_lcd(mode);
-
-  		  battery_voltage = get_battery_voltage();
-
-  		  set_battery_leds(battery_voltage);
-  		  //set_leds(battery_voltage);
+  		  display_lcd();
 
   	  } else {
-  		  __NOP();
+
+  		  // if low RPM turn off PWM signals
+  		  if (fabs(lrpm) < 30.0) {
+  			  pulse_l = 0;
+  		  } else {
+  	  		  pulse_l = set_pulse_PID(pid_motor_l, 0, lrpm);
+  		  }
+
+  		  if (fabs(rrpm) < 30.0) {
+  			  pulse_r = 0;
+  		  } else {
+  	  		  pulse_r = set_pulse_PID(pid_motor_r, 0, rrpm);
+  		  }
+
+  		  lcd16x2_clear();
   	  }
+
+	  set_PWM_pulse( pulse_l, pulse_r );
+
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -413,6 +437,64 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 122;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 500;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
   * @brief TIM4 Initialization Function
   * @param None
   * @retval None
@@ -531,15 +613,22 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_OUT5_GPIO_Port, LED_OUT5_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
-                          |MUX_SELECT1_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin
-                          |LED_OUT0_Pin, GPIO_PIN_RESET);
+                          |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
+                          |LED_OUT1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_OUT4_GPIO_Port, LED_OUT4_Pin, GPIO_PIN_RESET);
+  /*Configure GPIO pin : LED_OUT5_Pin */
+  GPIO_InitStruct.Pin = LED_OUT5_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_OUT5_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LCD_OUT4_Pin LCD_OUT5_Pin LCD_OUT6_Pin LCD_OUT7_Pin */
   GPIO_InitStruct.Pin = LCD_OUT4_Pin|LCD_OUT5_Pin|LCD_OUT6_Pin|LCD_OUT7_Pin;
@@ -549,11 +638,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LCD_EN_Pin LCD_RS_Pin LCD_RW_Pin MUX_SELECT2_Pin
-                           MUX_SELECT1_Pin LED_OUT3_Pin LED_OUT2_Pin LED_OUT1_Pin
-                           LED_OUT0_Pin */
+                           MUX_SELECT1_Pin LED_OUT4_Pin LED_OUT3_Pin LED_OUT2_Pin
+                           LED_OUT1_Pin */
   GPIO_InitStruct.Pin = LCD_EN_Pin|LCD_RS_Pin|LCD_RW_Pin|MUX_SELECT2_Pin
-                          |MUX_SELECT1_Pin|LED_OUT3_Pin|LED_OUT2_Pin|LED_OUT1_Pin
-                          |LED_OUT0_Pin;
+                          |MUX_SELECT1_Pin|LED_OUT4_Pin|LED_OUT3_Pin|LED_OUT2_Pin
+                          |LED_OUT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -571,18 +660,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SWITCH_Pin */
-  GPIO_InitStruct.Pin = SWITCH_Pin;
+  /*Configure GPIO pin : PA10 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SWITCH_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LED_OUT4_Pin */
-  GPIO_InitStruct.Pin = LED_OUT4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_OUT4_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
@@ -595,34 +677,88 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+/**
+  * @GPIO EXTI interrupt handler
+  * @GPIO_Pin pin which calls the interrupt
+  */
 void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ) {
-	if ( GPIO_Pin == GPIO_PIN_6 ) {
+	// Q1 pin of left motor
+	if ( GPIO_Pin == DC_MOTOR_1_Q1_Pin ) {
 		int cycle_count = __HAL_TIM_GET_COUNTER(&htim1);
-		lrpm = (double)60.0/(1.0e-5*24.0*cycle_count);
+		lrpm = (double) 60.0/(1.0e-5*24.0*cycle_count);
 
-		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_7 ) ) {
+		if ( HAL_GPIO_ReadPin( GPIOC, DC_MOTOR_1_Q2_Pin ) ) {
 			lrpm *= -1.0;
 		}
 
 		__HAL_TIM_SET_COUNTER(&htim1, 0);
 
-	} else if ( GPIO_Pin == GPIO_PIN_8 ) {
+	// Q1 pin of right motor
+	} else if ( GPIO_Pin == DC_MOTOR_2_Q1_Pin ) {
 		int cycle_count = __HAL_TIM_GET_COUNTER(&htim4);
 		rrpm = (double)60.0/(1.0e-5*24.0*cycle_count);
 
-		if ( HAL_GPIO_ReadPin( GPIOC, GPIO_PIN_9 ) ) {
+		if ( HAL_GPIO_ReadPin( GPIOC, DC_MOTOR_2_Q2_Pin ) ) {
 			rrpm *= -1.0;
 		}
 
 		__HAL_TIM_SET_COUNTER(&htim4, 0);
 
+	// digital switch
 	} else if ( GPIO_Pin == GPIO_PIN_10 ) {
-		if (mode == 1 ) {
-			mode = 0;
-		} else mode = 1;
+		mode ^= 1;
+		__HAL_TIM_SET_COUNTER(&htim1, 0);
+		__HAL_TIM_SET_COUNTER(&htim4, 0);
+
+		// Set LEDs and LCD based on new mode
+		if (mode) {
+			rrpm = 0.0;
+			lrpm = 0.0;
+			HAL_GPIO_WritePin(GPIOC, LED_OUT5_Pin, GPIO_PIN_SET);
+			HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+			HAL_TIM_OC_DelayElapsedCallback(&htim3);
+
+		// turn off LEDs and reset counter
+		} else {
+			HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, LED_OUT4_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOC, LED_OUT5_Pin, GPIO_PIN_RESET);
+			__HAL_TIM_SET_COUNTER(&htim3, 0);
+			HAL_TIM_OC_Stop(&htim3, TIM_CHANNEL_1);
+		}
 	}
 }
 
+/**
+  * @Timer interrupt handler
+  */
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim == &htim3) {
+	  if (mode) {
+		  double battery_voltage = get_battery_voltage();
+		  uint8_t LED_state;
+
+		  if (battery_voltage >= 0.9*VBAT_MAX) {
+			  LED_state = 0b1000;
+		  } else if (battery_voltage >= 0.8*VBAT_MAX) {
+			  LED_state = 0b0100;
+		  } else if (battery_voltage >= 0.6*VBAT_MAX) {
+			  LED_state = 0b0010;
+		  } else {
+			  LED_state = 0b0001;
+		  }
+
+		  set_battery_indicator_leds(LED_state);
+	  }
+  }
+}
+/**
+  * @Select channel 10 of the ADC
+  * @Param none
+  */
 void select_ADC_CH10(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = ADC_CHANNEL_10;
@@ -634,6 +770,10 @@ void select_ADC_CH10(void) {
   }
 }
 
+/**
+  * @Select channel 11 of the ADC
+  * @Param none
+  */
 void select_ADC_CH11(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = ADC_CHANNEL_11;
@@ -645,6 +785,10 @@ void select_ADC_CH11(void) {
   }
 }
 
+/**
+  * @Select channel 12 of the ADC
+  * @Param none
+  */
 void select_ADC_CH12(void) {
   ADC_ChannelConfTypeDef sConfig = {0};
   sConfig.Channel = ADC_CHANNEL_12;
@@ -656,6 +800,10 @@ void select_ADC_CH12(void) {
   }
 }
 
+/**
+  * @Return rounded value of potentiometer voltage
+  * @pot = 1 for speed potentiometer, 2 for steering potentiometer
+  */
 double get_pot_voltage( int pot ) {
 	if (pot == 1) {
 		select_ADC_CH11();
@@ -668,10 +816,15 @@ double get_pot_voltage( int pot ) {
 	uint8_t sample = HAL_ADC_GetValue(&hadc1);
 
 	double ret = (double) sample*(3.3/255.0);
+	ret = roundf(ret*10)/10.0;
 
 	return ret;
 }
 
+/**
+  * @Measure the voltage of the battery sensor circuit
+  * @Param none
+  */
 double get_battery_voltage(void) {
 	select_ADC_CH10();
 	HAL_ADC_Start(&hadc1);
@@ -682,6 +835,13 @@ double get_battery_voltage(void) {
 	return ret;
 }
 
+/**
+  * @Calculate the rotation speed of the left DC motor
+  * 		based off the potentiometer voltages
+  * @Param:
+  * pot1Voltage - voltage of speed potentiometer
+  * pot2Voltage - voltage of steering potentiometer
+  */
 double get_rot_speed_set_l( double pot1Voltage, double pot2Voltage ) {
 	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
 	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
@@ -689,8 +849,10 @@ double get_rot_speed_set_l( double pot1Voltage, double pot2Voltage ) {
 	double rot_speed;
 	double speed_factor = 4*speed_setting;
 
+	// turning right
 	if (steer_setting >= 0.0) {
 		rot_speed = speed_factor*10;
+	// turning left
 	} else {
 		rot_speed = speed_factor*(10 + steer_setting);
 	}
@@ -698,6 +860,13 @@ double get_rot_speed_set_l( double pot1Voltage, double pot2Voltage ) {
 	return rot_speed;
 }
 
+/**
+  * @Calculate the rotation speed of the right DC motor
+  * 		based off the potentiometer voltages
+  * @Param:
+  * pot1Voltage - voltage of speed potentiometer
+  * pot2Voltage - voltage of steering potentiometer
+  */
 double get_rot_speed_set_r( double pot1Voltage, double pot2Voltage ) {
 	double speed_setting = (pot1Voltage - 1.5)*10.0/1.5;
 	double steer_setting = (pot2Voltage - 1.5)*10.0/1.5;
@@ -705,8 +874,10 @@ double get_rot_speed_set_r( double pot1Voltage, double pot2Voltage ) {
 	double rot_speed;
 	double speed_factor = 4*speed_setting;
 
+	// turning right
 	if (steer_setting >= 0.0) {
 		rot_speed = speed_factor*(10 - steer_setting);
+	// turning left
 	} else {
 		rot_speed = speed_factor*10;
 	}
@@ -714,17 +885,24 @@ double get_rot_speed_set_r( double pot1Voltage, double pot2Voltage ) {
 	return rot_speed;
 }
 
-void set_rotation_speed( double pulse_l, double pulse_r ) {
+/**
+  * @Set the duty cycle of the PWM signals fed to the DC motors
+  * 	and set the MUX select based on positive/negative pulse values
+  * @Param:
+  * pulse_l - duty cycle of left DC motor PWM signal
+  * pulse_r - duty cycle of right DC motor PWM signal
+  */
+void set_PWM_pulse( double pulse_l, double pulse_r ) {
 	if ( pulse_l <= 0.0 ){
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, MUX_SELECT1_Pin, GPIO_PIN_SET);
 	} else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, MUX_SELECT1_Pin, GPIO_PIN_RESET);
 	}
 
 	if ( pulse_r <= 0.0 ){
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, MUX_SELECT2_Pin, GPIO_PIN_SET);
 	} else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, MUX_SELECT2_Pin, GPIO_PIN_RESET);
 	}
 
 
@@ -735,66 +913,77 @@ void set_rotation_speed( double pulse_l, double pulse_r ) {
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_2, abs(pulse_ri));
 }
 
-void display_lcd(int mode) {
+/**
+  * @Display text on the LCD in Run Mode
+  * @Param none
+  */
+void display_lcd() {
+	if (!mode) {
+		return;
+	}
+
 	lcd16x2_1stLine();
-	if (mode == 1) {
-		lcd16x2_printf("LRPM|  ON  |RRPM");
-	} else {
-		lcd16x2_printf("    |  OFF |");
-	}
-
+	lcd16x2_printf("LRPM|  ON  |RRPM");
 	lcd16x2_2ndLine();
-	lcd16x2_printf("%.0f\t\t\t\t\t\t\t\t\t%.0f   ", lrpm, rrpm);
+	int wheel_lrpm = round(lrpm/6);
+	int wheel_rrpm = round(rrpm/6);
+
+	int n_spaces = 16;
+	if (abs(wheel_lrpm/10) > 0) {
+		n_spaces -= 2;
+	} else {
+		n_spaces -= 1;
+	}
+	if (abs(wheel_lrpm/10) > 0) {
+		n_spaces -= 2;
+	} else {
+		n_spaces -= 1;
+	}
+	if (wheel_lrpm < 0) {
+		n_spaces -= 1;
+	}
+	if (wheel_rrpm < 0) {
+		n_spaces -= 1;
+	}
+
+	lcd16x2_printf("%d", wheel_lrpm);
+	for (int i = 0; i < n_spaces; i++) {
+		lcd16x2_printf(" ");
+	}
+	lcd16x2_printf("%d     ", wheel_rrpm);
 }
 
-void set_battery_leds(double battery_voltage) {
-	if (mode == 1) {
-		if (battery_voltage >= 10.8){
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 0);
-		}
-		else if (battery_voltage >= 9.6) {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 1);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 0);
-		}
-		else if (battery_voltage >= 7.2){
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 1);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 0);
-		}
-		else if (battery_voltage < 7.2) {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_12);
-		}
+/**
+  * @Set the state of all LEDs based on the mode and battery voltage
+  * @Param battery_voltage sensed from battery sensor circuit
+  */
+void set_battery_indicator_leds(uint8_t LED_state) {
+	if (LED_state == 0) {
+		HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT4_Pin, GPIO_PIN_RESET);
+	} else if (LED_state&0b1000 && ( (LED_state^0b1000) == 0)) {
+		HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT4_Pin, GPIO_PIN_RESET);
+	} else if (LED_state&0b0100 && ( (LED_state^0b0100) == 0)) {
+		HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT4_Pin, GPIO_PIN_RESET);
+	} else if (LED_state&0b0010 && ( (LED_state^0b0010) == 0)) {
+		HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT4_Pin, GPIO_PIN_RESET);
+	} else if (LED_state&0x0001 && ( (LED_state^0b0001) == 0)) {
+		HAL_GPIO_WritePin(GPIOB, LED_OUT1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LED_OUT3_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_TogglePin(GPIOB, LED_OUT4_Pin);
 	}
-	else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, 0);
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 0);
-	}
-}
-
-void set_controller_led(int mode) {
-	if (mode == 1) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
-	}
-	else {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 0);
-	}
-}
-
-int get_switch() {
-	if (HAL_GPIO_ReadPin( GPIOA, GPIO_PIN_10 )) { //if switch on, return 1, else return 0
-		return 1;
-	} else return 0;
 }
 
 /* USER CODE END 4 */

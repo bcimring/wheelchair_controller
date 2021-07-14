@@ -64,8 +64,8 @@ all: main-build
 main-build: lab_3.elf secondary-outputs
 
 # Tool invocations
-lab_3.elf: $(OBJS) $(USER_OBJS) N:\ECE\ 298\wheelchair_controller\lab_3\lab_3\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "lab_3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"N:\ECE 298\wheelchair_controller\lab_3\lab_3\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab_3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+lab_3.elf: $(OBJS) $(USER_OBJS) N:\ECE_298\lab_3_my\ copy\lab_3\lab_3\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "lab_3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"N:\ECE_298\lab_3_my copy\lab_3\lab_3\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="lab_3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
