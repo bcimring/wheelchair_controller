@@ -3,21 +3,22 @@ LABCENTER PROTEUS TOOL INFORMATION FILE
 
 In case of difficulty, please e-mail support@labcenter.co.uk
 
-Tool set up for Proteus layout 'ECE298_Lab4 [20210801, 23-39-13].pdsprj'.
-CADCAM generated at 6:04:32 PM on August 2, 2021.
+Tool set up for Proteus layout 'ECE298_Lab4.pdsprj'.
+CADCAM generated at 1:06:19 PM on August 3, 2021.
 
 File List
 ---------
-Top Copper              : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Top Copper.GBR
-Bottom Copper           : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Bottom Copper.GBR
-Top Silk Screen         : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Top Silk Screen.GBR
-Bottom Silk Screen      : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Bottom Silk Screen.GBR
-Top Solder Resist       : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Top Solder Resist.GBR
-Bottom Solder Resist    : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Bottom Solder Resist.GBR
-Top SMT Paste           : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Top SMT Paste.GBR
-Bottom SMT Paste        : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Bottom SMT Paste.GBR
-Drill, Plated, 1-16     : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Drill TOP-BOT Plated.GBR
-Netlist                 : ECE298_Lab4 [20210801, 23-39-13] - CADCAM Netlist.IPC
+Top Copper              : ECE298_Lab4 - CADCAM Top Copper.GBR
+Bottom Copper           : ECE298_Lab4 - CADCAM Bottom Copper.GBR
+Top Silk Screen         : ECE298_Lab4 - CADCAM Top Silk Screen.GBR
+Bottom Silk Screen      : ECE298_Lab4 - CADCAM Bottom Silk Screen.GBR
+Top Solder Resist       : ECE298_Lab4 - CADCAM Top Solder Resist.GBR
+Bottom Solder Resist    : ECE298_Lab4 - CADCAM Bottom Solder Resist.GBR
+Top SMT Paste           : ECE298_Lab4 - CADCAM Top SMT Paste.GBR
+Bottom SMT Paste        : ECE298_Lab4 - CADCAM Bottom SMT Paste.GBR
+Mechanical 1            : ECE298_Lab4 - CADCAM Mechanical 1.GBR
+Drill, Plated, 1-16     : ECE298_Lab4 - CADCAM Drill TOP-BOT Plated.GBR
+Netlist                 : ECE298_Lab4 - CADCAM Netlist.IPC
 
 Photoplotter Setup
 ------------------
@@ -79,24 +80,26 @@ D56	PPAD    W=1.27mm              H=1.524mm             I=13                  FL
 D57	PPAD    W=1.803mm             H=2.261mm             I=14                  FLASH Material
 D58	PPAD    W=0.94mm              H=1.448mm             I=15                  FLASH Material
 D59	PPAD    W=1.27mm              H=1.524mm             I=16                  FLASH Material
-D60	RECT    W=0.61mm              H=0.94mm                                    FLASH Material
-D61	RECT    W=1.448mm             H=0.94mm                                    FLASH Material
-D62	RECT    W=0.457mm             H=1.041mm                                   FLASH Material
-D63	RECT    W=0.61mm              H=1.549mm                                   FLASH Material
-D64	RECT    W=3.15mm              H=2.438mm                                   FLASH Material
-D65	RECT    W=0.94mm              H=1.448mm                                   FLASH Material
-D66	RECT    W=1.27mm              H=1.016mm                                   FLASH Material
-D67	RECT    W=1.143mm             H=1.448mm                                   FLASH Material
-D68	RECT    W=1.448mm             H=1.143mm                                   FLASH Material
-D69	RECT    W=0.94mm              H=0.61mm                                    FLASH Material
-D74	RECT    W=1.016mm             H=1.27mm                                    FLASH Material
-D75	RECT    W=1.803mm             H=2.261mm                                   FLASH Material
-D76	CIRCLE  D=0.254mm                                                         FLASH ViaDrill
-D77	CIRCLE  D=0.381mm                                                         FLASH ViaDrill
-D78	CIRCLE  D=0.762mm                                                         FLASH ComponentDrill
-D79	CIRCLE  D=0.889mm                                                         FLASH ComponentDrill
-D80	CIRCLE  D=0.813mm                                                         FLASH ComponentDrill
-D81	CIRCLE  D=1.524mm                                                         FLASH ComponentDrill
+D60	PPAD    W=1.143mm             H=1.448mm             I=17                  FLASH Material
+D61	RECT    W=0.61mm              H=0.94mm                                    FLASH Material
+D62	RECT    W=1.448mm             H=0.94mm                                    FLASH Material
+D63	RECT    W=0.457mm             H=1.041mm                                   FLASH Material
+D64	RECT    W=0.61mm              H=1.549mm                                   FLASH Material
+D65	RECT    W=3.15mm              H=2.438mm                                   FLASH Material
+D66	RECT    W=0.94mm              H=1.448mm                                   FLASH Material
+D67	RECT    W=1.27mm              H=1.016mm                                   FLASH Material
+D68	RECT    W=1.143mm             H=1.448mm                                   FLASH Material
+D69	RECT    W=1.448mm             H=1.143mm                                   FLASH Material
+D74	RECT    W=0.94mm              H=0.61mm                                    FLASH Material
+D75	RECT    W=1.016mm             H=1.27mm                                    FLASH Material
+D76	RECT    W=1.803mm             H=2.261mm                                   FLASH Material
+D77	CIRCLE  D=0.203mm                                                         DRAW  Slot
+D78	CIRCLE  D=0.254mm                                                         FLASH ViaDrill
+D79	CIRCLE  D=0.381mm                                                         FLASH ViaDrill
+D80	CIRCLE  D=0.762mm                                                         FLASH ComponentDrill
+D81	CIRCLE  D=0.889mm                                                         FLASH ComponentDrill
+D82	CIRCLE  D=0.813mm                                                         FLASH ComponentDrill
+D83	CIRCLE  D=1.524mm                                                         FLASH ComponentDrill
 
 Layer Stackup
 -------------

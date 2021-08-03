@@ -1,6 +1,6 @@
 Pre-production check start.
-File: N:\ECE_298\wheelchair_controller\lab_4\Project Backups\ECE298_Lab4 [20210801, 23-39-13].pdsprj
-Date: August 2, 2021, 5:48:33 PM
+File: N:\ECE_298\wheelchair_controller\lab_4\ECE298_Lab4.pdsprj
+Date: August 3, 2021, 1:04:02 PM
 TEST: Connectivity.
 PASS: Connectivity valid.
 TEST: Object validity.
