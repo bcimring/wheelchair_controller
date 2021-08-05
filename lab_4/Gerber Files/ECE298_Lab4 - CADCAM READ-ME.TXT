@@ -4,7 +4,7 @@ LABCENTER PROTEUS TOOL INFORMATION FILE
 In case of difficulty, please e-mail support@labcenter.co.uk
 
 Tool set up for Proteus layout 'ECE298_Lab4.pdsprj'.
-CADCAM generated at 1:06:19 PM on August 3, 2021.
+CADCAM generated at 9:58:48 PM on August 4, 2021.
 
 File List
 ---------
@@ -16,7 +16,6 @@ Top Solder Resist       : ECE298_Lab4 - CADCAM Top Solder Resist.GBR
 Bottom Solder Resist    : ECE298_Lab4 - CADCAM Bottom Solder Resist.GBR
 Top SMT Paste           : ECE298_Lab4 - CADCAM Top SMT Paste.GBR
 Bottom SMT Paste        : ECE298_Lab4 - CADCAM Bottom SMT Paste.GBR
-Mechanical 1            : ECE298_Lab4 - CADCAM Mechanical 1.GBR
 Drill, Plated, 1-16     : ECE298_Lab4 - CADCAM Drill TOP-BOT Plated.GBR
 Netlist                 : ECE298_Lab4 - CADCAM Netlist.IPC
 
@@ -93,13 +92,12 @@ D69	RECT    W=1.448mm             H=1.143mm                                   FL
 D74	RECT    W=0.94mm              H=0.61mm                                    FLASH Material
 D75	RECT    W=1.016mm             H=1.27mm                                    FLASH Material
 D76	RECT    W=1.803mm             H=2.261mm                                   FLASH Material
-D77	CIRCLE  D=0.203mm                                                         DRAW  Slot
-D78	CIRCLE  D=0.254mm                                                         FLASH ViaDrill
-D79	CIRCLE  D=0.381mm                                                         FLASH ViaDrill
-D80	CIRCLE  D=0.762mm                                                         FLASH ComponentDrill
-D81	CIRCLE  D=0.889mm                                                         FLASH ComponentDrill
-D82	CIRCLE  D=0.813mm                                                         FLASH ComponentDrill
-D83	CIRCLE  D=1.524mm                                                         FLASH ComponentDrill
+D77	CIRCLE  D=0.254mm                                                         FLASH ViaDrill
+D78	CIRCLE  D=0.381mm                                                         FLASH ViaDrill
+D79	CIRCLE  D=0.762mm                                                         FLASH ComponentDrill
+D80	CIRCLE  D=0.889mm                                                         FLASH ComponentDrill
+D81	CIRCLE  D=0.813mm                                                         FLASH ComponentDrill
+D82	CIRCLE  D=1.524mm                                                         FLASH ComponentDrill
 
 Layer Stackup
 -------------
